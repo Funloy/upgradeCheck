@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"upgrade.maiyajia.com/services/mongo"
@@ -53,7 +52,7 @@ func QueryUpgradeProduct(version string) (*Product, bool) {
 }
 
 //QueryUpgradeTool 工具检测是否为最新版本，最新则返回最新的产品信息
-func QueryUpgradeTool(id bson.ObjectId, neme, version string) (*Tool, bool) {
+func QueryUpgradeTool(id bson.ObjectId, neme, version string) (*Tool, bool, error) {
 	//获取最新发布的产品
 	var tool *Tool
 	f := func(col *mgo.Collection) error {
@@ -63,15 +62,14 @@ func QueryUpgradeTool(id bson.ObjectId, neme, version string) (*Tool, bool) {
 	err := mongo.Client.Do(beego.AppConfig.String("MongoDB"), "tool", f)
 
 	//读取最新版本号，并进行比较
-	logs.Info("tool err:", neme, id, err)
 	prodVersion := tool.Version
 	isUpgrade := compareVersion(version, prodVersion)
 	// 没有最新版本，不需要升级
 	if !isUpgrade {
-		return nil, isUpgrade
+		return nil, isUpgrade, err
 	}
 
-	return tool, true
+	return tool, true, err
 
 }
 

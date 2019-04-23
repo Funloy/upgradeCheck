@@ -122,7 +122,11 @@ func (upgradeCtl *UpgradeController) UpgradeCheckTools() {
 			logs.Info("版本号不合法")
 			continue
 		}
-		upgradeTool, isUpgrade := m.QueryUpgradeTool(tool.ID, tool.Name, tool.Version)
+		upgradeTool, isUpgrade, err := m.QueryUpgradeTool(tool.ID, tool.Name, tool.Version)
+		if err != nil && "not found" == err.Error() {
+			logs.Error("QueryUpgradeTool err:", err)
+			continue
+		}
 		if isUpgrade {
 			resultTools = append(resultTools, upgradeTool)
 		}
@@ -172,18 +176,19 @@ func (upgradeCtl *UpgradeController) UpgradeCheckCourses() {
 	//获取已购买的所有课程
 	procourses, err := m.GetCoursesInfo(url, productKey, productSerial)
 	if err != nil {
-		logs.Info("GetCoursesInfo fail:", err)
+		logs.Error("GetCoursesInfo fail:", err)
 		upgradeCtl.abortWithError(m.ERR_ACCOUNT_UPGRADE)
 	}
 	//比较课程版本，将有版本升级的放入数组切片中
 
 	for _, upgradeCou := range upgradeCourses.Courses {
 		if !validateVersion(upgradeCou.Version) {
-			logs.Info("版本号不合法")
+			logs.Error("版本号不合法")
 			continue
 		}
 		upgradeCourse, isUpgrade, err := m.QueryUpgradeCourse(upgradeCou.ID, upgradeCou.Version)
 		if err != nil && "not found" == err.Error() {
+			logs.Error("QueryUpgradeTool err:", err)
 			continue
 		}
 		if isUpgrade {
